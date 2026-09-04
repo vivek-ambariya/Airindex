@@ -1,0 +1,408 @@
+/* ============================================================
+   AIRINDEX — design tokens
+   Taken from the supplied mockups (the "Industry" system, dark
+   variant): steel accent on near-black, Barlow Condensed over
+   Barlow, hairline rules, square corners, blueprint corner marks.
+   Nothing here invents a colour the mockups did not specify.
+   ============================================================ */
+:root {
+  --bg: #0a0a0a;
+  --surf: #141414;
+  --surf-2: #1a1a1a;
+  --ink: #f2f0ec;
+  --mute: #8a8a8a;
+  --mute-2: #5f5f5f;
+  --hair: #242424;
+  --hair-2: #2f2f2f;
+  --accent: #749dc4;
+  --accent-hi: #94bce3;
+  --accent-dim: rgba(116, 157, 196, 0.14);
+
+  /* CPCB bands. Mirrored in src/lib/bands.js — these are for CSS-only
+     uses (the legend swatches); JS reads them from bands.js. */
+  --b1: #157f73;
+  --b2: #4fa79a;
+  --b3: #e6c351;
+  --b4: #e08a3c;
+  --b5: #c9497c;
+  --b6: #7e3a9e;
+  --bx: #4a4a4a;
+
+  --font-head: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, sans-serif;
+
+  /* Dense scale — this is a dashboard, not a marketing page. */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  --pad-x: clamp(20px, 4vw, 72px);
+  --nav-h: 53px;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  height: 100%;
+}
+
+/* The app is a flex column: nav, optional provenance banner, then main
+   taking whatever height is left. The map screen needs to fill exactly
+   that remainder.
+
+   This replaced `height: calc(100vh - var(--nav-h))` on .map-grid. That
+   form only worked when the nav was the sole thing above the map -- the
+   synthetic-data banner pushed the map's bottom edge below the viewport
+   and quietly clipped the band legend, which is not an optional piece of
+   furniture. Any future banner would have broken it again. */
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#root > main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+#root > nav, #root > .provenance-banner { flex: 0 0 auto; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin: 0;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hi); }
+
+::selection { background: rgba(116, 157, 196, 0.3); }
+
+/* Never the browser default ring. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---- kicker / label type ---- */
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* Units must never be uppercased -- "µg/m³" becomes "MG/M³", which is a
+   different unit by a factor of 1000. Always rendered via <Unit>. */
+.unit { text-transform: none; }
+
+/* ---- blueprint frame: the mockup's registration marks ---- */
+.bp { position: relative; border: 1px solid var(--hair); }
+.bp > .corner {
+  position: absolute;
+  width: 7px; height: 7px;
+  pointer-events: none;
+  color: var(--accent);
+}
+.bp > .corner::before,
+.bp > .corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.bp > .corner::before { left: 0; right: 0; top: 50%; height: 1px; }
+.bp > .corner::after { top: 0; bottom: 0; left: 50%; width: 1px; }
+.bp > .tl { top: -4px; left: -4px; }
+.bp > .tr { top: -4px; right: -4px; }
+.bp > .bl { bottom: -4px; left: -4px; }
+.bp > .br { bottom: -4px; right: -4px; }
+
+/* ---- nav ---- */
+.nav {
+  position: sticky; top: 0; z-index: 900;
+  display: flex; align-items: center; gap: var(--s5);
+  padding: 14px var(--pad-x);
+  border-bottom: 1px solid var(--hair);
+  background: rgba(10, 10, 10, 0.86);
+  backdrop-filter: blur(8px);
+}
+.nav-brand {
+  font-family: var(--font-head);
+  font-weight: 600; font-size: 19px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-right: auto;
+}
+.nav-link {
+  font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mute);
+  background: none; border: 0; padding: 4px 2px; cursor: pointer;
+  font-family: var(--font-body);
+  transition: color 0.16s ease;
+}
+.nav-link:hover { color: var(--accent-hi); }
+.nav-link[aria-current="page"] { color: var(--ink); }
+
+/* ---- buttons ---- */
+.btn {
+  font-family: var(--font-body);
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 8px 14px;
+  border: 1px solid var(--hair-2);
+  background: transparent; color: var(--ink);
+  cursor: pointer; border-radius: 0;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+.btn:active { background: rgba(116, 157, 196, 0.22); }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #0a0a0a;
+  font-weight: 500;
+}
+.btn-primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+.btn[aria-pressed="true"] {
+  background: var(--accent-dim); border-color: var(--accent); color: var(--ink);
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---- form controls ---- */
+.input, select.input {
+  font-family: var(--font-body); font-size: 14px;
+  padding: 9px 11px;
+  background: var(--surf); color: var(--ink);
+  border: 1px solid var(--hair-2); border-radius: 0;
+  width: 100%;
+}
+.input:focus-visible { border-color: var(--accent); }
+.input::placeholder { color: var(--mute-2); }
+select.input option { background: var(--surf); color: var(--ink); }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mute);
+}
+/* Errors sit under their own field, not in a summary at the top. */
+.field-error { font-size: 12px; color: var(--b5); }
+
+/* ---- band chip: colour is NEVER the only channel ---- */
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; white-space: nowrap;
+}
+.chip > i {
+  width: 9px; height: 9px; flex: none;
+  display: inline-block;
+}
+/* A withheld band is grey AND hatched, so it is distinguishable
+   without relying on hue at all. */
+.chip > i.no-band {
+  background-image: repeating-linear-gradient(
+    45deg, var(--bx) 0 2px, #2b2b2b 2px 4px);
+}
+
+/* ---- layout ---- */
+.screen { padding: var(--s6) var(--pad-x) var(--s8); }
+.screen-head { margin-bottom: var(--s5); }
+.screen-head h1 { font-size: clamp(30px, 4vw, 52px); }
+.screen-head p {
+  max-width: 62ch; color: var(--mute); margin: var(--s3) 0 0;
+}
+
+.grid { display: grid; gap: var(--s4); }
+.stat {
+  padding: var(--s4);
+}
+.stat-v {
+  font-family: var(--font-head); font-weight: 600;
+  font-size: clamp(26px, 3vw, 40px); line-height: 1;
+}
+.stat-l { margin-top: 6px; }
+
+.hr { border: 0; border-top: 1px solid var(--hair); margin: var(--s6) 0; }
+
+/* ---- map ---- */
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  height: 100%;
+  min-height: 460px;
+}
+.map-wrap { position: relative; min-width: 0; }
+
+/* Shown only when the panel becomes a bottom sheet — see the 860px
+   breakpoint below. */
+.sheet-toggle { display: none; }
+.panel {
+  border-left: 1px solid var(--hair);
+  background: var(--bg);
+  overflow-y: auto;
+  padding: var(--s5);
+}
+
+/* Leaflet, re-themed. The default light chrome would fight the page. */
+.map-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 22px;
+  z-index: 500;
+  max-width: 330px;
+  max-height: calc(100% - 44px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--hair);
+}
+
+.leaflet-container {
+  background: #0d0d0d;
+  font-family: var(--font-body);
+  height: 100%; width: 100%;
+  outline: none;
+}
+/* Tiles are desaturated and darkened — the mockup's duotone treatment,
+   applied to the basemap so station colour is the only saturated thing
+   on screen. */
+.leaflet-tile-pane {
+  filter: grayscale(1) invert(1) brightness(0.82) contrast(1.05);
+}
+.leaflet-control-attribution {
+  background: rgba(10, 10, 10, 0.82) !important;
+  color: var(--mute) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: var(--accent) !important; }
+.leaflet-bar {
+  border: 1px solid var(--hair-2) !important;
+  box-shadow: none !important;
+}
+.leaflet-bar a {
+  background: var(--surf) !important;
+  color: var(--ink) !important;
+  border-bottom-color: var(--hair) !important;
+}
+.leaflet-bar a:hover { background: var(--surf-2) !important; }
+
+.marker-dot {
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(10, 10, 10, 0.9);
+}
+.cluster-dot {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-body); font-size: 11px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- table ---- */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left;
+  font-family: var(--font-body); font-weight: 500;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mute);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hair);
+  white-space: nowrap;
+}
+.table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #1a1a1a;
+  vertical-align: middle;
+}
+.table tbody tr:hover { background: rgba(116, 157, 196, 0.05); }
+.table .r { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---- notices ---- */
+.notice {
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--hair-2);
+  border-left: 3px solid var(--accent);
+  background: var(--surf);
+  font-size: 13px; color: var(--mute);
+}
+.notice strong { color: var(--ink); }
+.notice-warn { border-left-color: var(--b3); }
+.notice-bad { border-left-color: var(--b5); }
+
+/* ---- charts ---- */
+.chart-wrap { position: relative; }
+.chart-wrap svg { display: block; width: 100%; height: auto; }
+.axis-label { font-size: 10px; fill: var(--mute); font-variant-numeric: tabular-nums; }
+.grid-line { stroke: var(--hair); stroke-width: 1; }
+.chart-focus { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 2 2; }
+
+/* A tooltip is a convenience. The readout below the chart is the
+   accessible path and is always visible. */
+.readout {
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5);
+  margin-top: var(--s3); padding-top: var(--s3);
+  border-top: 1px solid var(--hair);
+  font-size: 12px;
+}
+.readout dt { color: var(--mute); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; }
+.readout dd { margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---- skeleton ---- */
+@keyframes shimmer {
+  0% { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}
+.skel {
+  background: var(--surf);
+  background-image: linear-gradient(100deg, transparent 28%,
+    rgba(255, 255, 255, 0.08) 50%, transparent 72%);
+  background-size: 280% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* ---- responsive ---- */
+@media (max-width: 1100px) {
+  .map-grid { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+@media (max-width: 860px) {
+  /* The panel becomes a bottom sheet so the map stays visible while
+     reading a station — the mockup is explicit about this. */
+  .map-grid { grid-template-columns: 1fr; position: relative; }
+  .panel {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 800;
+    height: 48%;
+    border-left: 0; border-top: 1px solid var(--hair);
+    padding: var(--s4);
+  }
+  .panel[data-sheet="full"] { height: 76%; }
+  .sheet-toggle { display: block; width: 100%; margin-bottom: 12px; }
+  .nav { flex-wrap: wrap; gap: 10px var(--s4); }
+  .nav-brand { margin-right: auto; }
+  .screen { padding: var(--s5) var(--pad-x) var(--s7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -33,8 +33,15 @@ cp .env.example .env          # then set OPENAQ_API_KEY if you have one
 .venv/bin/python -m jobs.publish
 
 # 4. serve
-.venv/bin/python wsgi.py       # http://127.0.0.1:5000/api/health
+.venv/bin/python wsgi.py       # http://127.0.0.1:5001/api/health
 ```
+
+> **Why 5001 and not 5000.** On macOS, Control Center's AirPlay Receiver
+> listens on port 5000 and replies HTTP 403. That is worse than a closed
+> port: the app receives an answer from an unrelated service instead of a
+> clean connection failure, so "the API is down" shows up as a mysterious
+> permissions error. The client also treats any non-JSON reply as offline
+> so the fallback engages either way.
 
 With a real API key, step 3's first command becomes:
 
@@ -46,6 +53,13 @@ Frontend:
 
 ```bash
 cd frontend && npm install && npm run dev    # http://localhost:5173
+```
+
+Analysis (Phase 6) — Open-Meteo needs no API key:
+
+```bash
+./backend/.venv/bin/python analysis/fetch_weather.py --city Delhi
+./backend/.venv/bin/python analysis/winter_rise.py  --city Delhi
 ```
 
 ## Stack
@@ -111,6 +125,15 @@ indexed query per city rather than assembling an `IN` list.
 **Nothing is emailed.** `send_email()` appends to `logs/emails.log` and
 prints. One function, so it can be swapped for real delivery later.
 
+**The analysis argues against its own headline.** Phase 6 asks how much of
+Delhi's winter PM2.5 rise is weather rather than emissions. The regression
+says 63%. `docs/methodology.md` §6 then shows why that figure is an upper
+bound and not an estimate: 62% of the winter indicator is reconstructible
+from the weather controls alone, and on the synthetic fixture — where the
+true weather contribution is zero by construction — the same method still
+reports 63%. The gap is a measurement of the design's bias, obtainable
+only because the data-generating process is known.
+
 ## Layout
 
 ```
@@ -132,6 +155,19 @@ powerbi/
 ```bash
 cd backend && .venv/bin/python -m pytest -q
 ```
+
+99 tests. The ones worth knowing about:
+
+- `test_axis_order.py` — proves MariaDB's geometry is longitude-first
+  against an independent haversine, **and** proves latitude-first is
+  still wrong, so a move to MySQL 8 fails loudly rather than silently.
+- `test_bands.py` — parses `frontend/src/lib/bands.js` and asserts its
+  threshold table matches `app/bands.py`. Two copies exist so the map
+  works offline; this stops them drifting.
+- `test_alerts.py::test_unverified_subscription_receives_nothing` —
+  Phase 5's acceptance check.
+- `test_api.py::test_silent_station_never_carries_a_band` — the property
+  the whole completeness apparatus exists to protect.
 
 ## Asia expansion
 

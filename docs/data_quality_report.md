@@ -1,6 +1,6 @@
 # Data quality report
 
-Generated 2026-09-04 15:16 UTC by `backend/jobs/clean.py`.
+Generated 2026-09-04 18:18 UTC by `backend/jobs/clean.py`.
 
 > ## ⚠ SYNTHETIC DATA
 >

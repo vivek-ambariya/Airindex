@@ -28,6 +28,14 @@ def db_conn():
         conn = connect()
     except pymysql.err.OperationalError as exc:
         pytest.skip(f"Database not reachable ({exc}). Start XAMPP's MySQL and retry.")
+
+    # Autocommit, so this connection sees rows the Flask test client
+    # committed on its own connection. InnoDB defaults to REPEATABLE
+    # READ: without this the fixture holds one snapshot for the whole
+    # session and a subscription created through the API is invisible
+    # here -- which reads as "the insert did not happen" rather than as
+    # an isolation-level artefact.
+    conn.autocommit(True)
     yield conn
     conn.close()
 

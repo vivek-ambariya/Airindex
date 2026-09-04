@@ -11,7 +11,11 @@ pyarrow==18.1.0
 
 # Analysis (Phase 6)
 duckdb==1.1.3
-statsmodels==0.14.4
+# 0.15.0, not 0.14.x: statsmodels <=0.14.4 imports scipy's private
+# `_lazywhere`, which scipy removed in 1.15. With a current scipy the
+# older pin fails at import time, not at use time.
+statsmodels==0.15.0
+scipy>=1.15
 
 # Tests
 pytest==8.3.4

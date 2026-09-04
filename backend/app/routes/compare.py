@@ -6,7 +6,7 @@ from datetime import timedelta
 from flask import Blueprint, current_app, jsonify, request
 
 from .. import db, validation as v
-from ..bands import MIN_COMPLETENESS_FOR_BAND, UNITS, band_name
+from ..bands import MIN_COMPLETENESS_FOR_BAND, UNITS, band_with_reason
 
 bp = Blueprint("compare", __name__, url_prefix="/api")
 
@@ -24,13 +24,19 @@ def list_cities():
     for r in rows:
         mean_value = float(r["mean_value"]) if r.get("mean_value") is not None else None
         completeness = float(r["mean_completeness"] or 0)
+        # Same gate and same wording as /api/stations and the published
+        # snapshot, so a city is never coloured on one screen and grey
+        # on another.
+        band, band_withheld = band_with_reason(
+            parameter, mean_value, window_completeness=completeness)
         cities.append({
             "city": r["city"],
             "state": r.get("state"),
             "n_stations": int(r["n_stations"]),
             "mean_value": mean_value,
             "mean_completeness": completeness,
-            "band": band_name(parameter, mean_value, completeness) if mean_value is not None else None,
+            "band": band,
+            "band_withheld": band_withheld,
             "first_date": r["first_date"].isoformat() if r.get("first_date") else None,
             "last_date": r["last_date"].isoformat() if r.get("last_date") else None,
             "n_rows": int(r["n_rows"]),
@@ -106,7 +112,9 @@ def compare_cities():
                 "coverage_pct": round((int(summary["n_days"] or 0) / n_days) * 100, 2),
                 "mean_completeness": mean_completeness,
                 "max_stations": int(summary["max_stations"]) if summary.get("max_stations") is not None else 0,
-                "band": band_name(parameter, mean_value, mean_completeness) if mean_value is not None else None,
+                "band": band_with_reason(
+                    parameter, mean_value,
+                    window_completeness=mean_completeness)[0],
             },
         })
 

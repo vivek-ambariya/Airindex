@@ -1,0 +1,106 @@
+// DAX measures for the AIRINDEX report.
+//
+// The governing rule: every measure that produces a CONCENTRATION
+// filters to is_usable = TRUE. Days below 50% completeness are in the
+// table because the coverage page has to be able to count them, but they
+// must never enter an average. A measure that quietly includes them
+// reports a number the application itself refuses to colour.
+
+// ---- base -------------------------------------------------------------
+Usable Days = CALCULATE(COUNTROWS('airindex'), 'airindex'[is_usable] = TRUE)
+All Days    = COUNTROWS('airindex')
+
+Mean PM2.5 =
+CALCULATE(
+    AVERAGE('airindex'[value]),
+    'airindex'[parameter] = "pm25",
+    'airindex'[is_usable] = TRUE
+)
+
+Max PM2.5 =
+CALCULATE(
+    MAX('airindex'[value]),
+    'airindex'[parameter] = "pm25",
+    'airindex'[is_usable] = TRUE
+)
+
+// ---- coverage ---------------------------------------------------------
+// Reported as a percentage of the days in the current filter context,
+// so slicing to one month gives that month's coverage.
+Coverage % = DIVIDE([Usable Days], [All Days])
+
+Mean Completeness =
+CALCULATE(AVERAGE('airindex'[completeness]), 'airindex'[parameter] = "pm25")
+
+Stations Reporting =
+CALCULATE(
+    DISTINCTCOUNT('airindex'[station]),
+    'airindex'[is_usable] = TRUE
+)
+
+Stations Total = DISTINCTCOUNT('airindex'[station])
+
+Stations Silent = [Stations Total] - [Stations Reporting]
+
+// ---- band assignment --------------------------------------------------
+// Mirrors app/bands.py: withheld below the completeness floor rather
+// than defaulting to the lowest band. Returning "Good" for a station
+// with no data would put clean air on the map where there is none.
+Band Of Mean =
+VAR v = [Mean PM2.5]
+VAR cov = [Coverage %]
+RETURN
+    SWITCH(
+        TRUE(),
+        ISBLANK(v),   "No data",
+        cov < 0.5,    "No band (under 50% complete)",
+        v <= 30,      "Good",
+        v <= 60,      "Satisfactory",
+        v <= 90,      "Moderate",
+        v <= 120,     "Poor",
+        v <= 250,     "Very poor",
+        "Severe"
+    )
+
+// Sort key, so a band legend orders Good..Severe rather than
+// alphabetically (Good, Moderate, Poor, Satisfactory, Severe...).
+Band Sort =
+SWITCH([Band Of Mean],
+    "Good", 0, "Satisfactory", 1, "Moderate", 2,
+    "Poor", 3, "Very poor", 4, "Severe", 5, 99)
+
+// ---- exceedance -------------------------------------------------------
+// Against the CPCB 24-hour standard for PM2.5, which is 60 ug/m3.
+// Denominator is usable days only: days with no data are not compliant
+// days, and counting them as such would flatter every station.
+Days Over CPCB 60 =
+CALCULATE(
+    COUNTROWS('airindex'),
+    'airindex'[parameter] = "pm25",
+    'airindex'[is_usable] = TRUE,
+    'airindex'[value] > 60
+)
+
+Share Over CPCB 60 = DIVIDE([Days Over CPCB 60], [Usable Days])
+
+// WHO 2021 24-hour guideline, for contrast. Almost every Indian station
+// exceeds this on almost every day, which is the point of showing it.
+Days Over WHO 15 =
+CALCULATE(
+    COUNTROWS('airindex'),
+    'airindex'[parameter] = "pm25",
+    'airindex'[is_usable] = TRUE,
+    'airindex'[value] > 15
+)
+
+// ---- seasonal ---------------------------------------------------------
+Winter Mean =
+CALCULATE([Mean PM2.5], 'airindex'[season] = "Winter (Nov-Jan)")
+
+Monsoon Mean =
+CALCULATE([Mean PM2.5], 'airindex'[season] = "Monsoon (Jun-Sep)")
+
+// The headline seasonal ratio. See docs/methodology.md section 6 before
+// attributing this to weather -- most of it is NOT separable from the
+// calendar with this data.
+Winter Multiple = DIVIDE([Winter Mean], [Monsoon Mean])
